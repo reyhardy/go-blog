@@ -12,16 +12,15 @@ type service struct {
 	db scylladb.Client
 }
 
-type servicer interface {
+type Servicer interface {
 	Add(ctx context.Context, keyspace string, postParams *PostParams) (*Post, error)
 	Get(ctx context.Context, keyspace string) (*Post, error)
 	SelectAll(ctx context.Context, keyspace string) (Posts, error)
 	Update() (*Post, error)
-	// Delete(ctx context.Context, keyspace string, postParams *PostParams) error
 	Delete(ctx context.Context, keyspace string, postParams *PostParams) error
 }
 
-func newService(session scylladb.Client) servicer {
+func NewService(session scylladb.Client) Servicer {
 	return &service{session}
 }
 

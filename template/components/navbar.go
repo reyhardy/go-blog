@@ -5,8 +5,8 @@ import (
 	"maragu.dev/gomponents/html"
 )
 
-func Navbar() gomponents.Node {
-	navbar := []string{"Home", "About", "Contact"}
+func Navbar(navbar ...string) gomponents.Node {
+	// navbar := []string{"Home", "About", "Contact"}
 	return html.Nav(
 		html.Ul(
 			html.Li(html.Strong(gomponents.Text("Go-Blog"))),

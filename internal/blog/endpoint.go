@@ -10,7 +10,7 @@ import (
 )
 
 type endpoint struct {
-	svc servicer
+	svc Servicer
 }
 
 type API interface {
@@ -22,7 +22,7 @@ type API interface {
 
 func NewAPI(session scylladb.Client) API {
 	return &endpoint{
-		svc: newService(session),
+		svc: NewService(session),
 	}
 }
 
@@ -40,7 +40,7 @@ func (e *endpoint) GetPost(w http.ResponseWriter, r *http.Request) {
 
 	sse := datastar.NewSSE(w, r)
 
-	err = sse.MergeFragments(RenderPostList(res).String())
+	err = sse.MergeFragments(PostList(res).String())
 	if err != nil {
 		sse.ConsoleError(err)
 	}
@@ -61,7 +61,7 @@ func (e *endpoint) AddPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sse := datastar.NewSSE(w, r)
-	err = sse.MergeFragments(RenderPostCard(res).String(), datastar.WithMergeAppend(), datastar.WithSelectorID("postlist"))
+	err = sse.MergeFragments(PostCard(res).String(), datastar.WithMergePrepend(), datastar.WithSelectorID("postlist"))
 	if err != nil {
 		sse.ConsoleError(err)
 	}

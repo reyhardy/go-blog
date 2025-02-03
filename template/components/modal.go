@@ -8,7 +8,7 @@ import (
 
 func ModalForm(btnName, modalHeader string) gomponents.Node {
 	return html.Div(
-		gomponents.Attr("data-signals", "{open: false, input: ''}"),
+		gomponents.Attr("data-signals", "{open: false}"),
 		element.ButtonElement("button", btnName, gomponents.Attr("data-on-click", "$open = true")),
 		html.Dialog(
 			html.ID("dialog"),
@@ -21,16 +21,12 @@ func ModalForm(btnName, modalHeader string) gomponents.Node {
 					html.H1(html.Strong(gomponents.Text(modalHeader))),
 				),
 				html.Form(
-					gomponents.Attr("data-on-submit", "@post('/addpost', {contentType: 'form'}); $open = false; $input = ''"),
+					gomponents.Attr("data-on-submit", "@post('/post', {contentType: 'form'}); $open = false; @setAll('input.', '')"),
 					html.FieldSet(
-						element.InputElement("Title", "title", "", "text"),
-						element.InputElement("Author", "author", "", "text"),
-						element.Textarea("Content", "content", "", html.Rows("10")),
-						html.Div(
-							html.Class("grid"),
-							element.ButtonElement("submit", "Submit"),
-							element.ButtonElement("reset", "Reset", gomponents.Attr("data-on-click", "$input=''")),
-						),
+						element.InputElement("Title", "title", "", "text", gomponents.Attr("data-bind", "input.title")),
+						element.InputElement("Author", "author", "", "text", gomponents.Attr("data-bind", "input.author")),
+						element.Textarea("Content", "content", "", html.Rows("10"), gomponents.Attr("data-bind", "input.content")),
+						element.ButtonElement("submit", "Submit"),
 					),
 				),
 			),
