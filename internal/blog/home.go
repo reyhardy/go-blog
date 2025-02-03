@@ -9,7 +9,7 @@ import (
 
 func Home() gomponents.Node {
 	return layout.Layout(
-		components.Navbar(),
+		components.Navbar("Home", "About", "Contact"),
 		html.HGroup(
 			html.H1(gomponents.Text("this is go-blog")),
 			html.P(gomponents.Text("we use picocss for styling")),
@@ -18,7 +18,7 @@ func Home() gomponents.Node {
 			html.Class("grid"),
 			components.ModalForm("Add Post", "Add Post"),
 			html.Div(
-				gomponents.Attr("data-on-load", "@get('/getpost')"),
+				gomponents.Attr("data-on-load", "@get('/post')"),
 				html.ID("postlist"),
 			),
 		),

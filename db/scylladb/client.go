@@ -17,7 +17,6 @@ func NewClient(cfg gocql.ClusterConfig) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	cfg.Keyspace = "blog"
 	return &Client{session}, nil
 }
 
