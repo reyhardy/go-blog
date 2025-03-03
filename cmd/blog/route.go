@@ -12,11 +12,14 @@ func routes(dbClient scylladb.Client) {
 	blogEP := blog.NewAPI(dbClient)
 
 	http.HandleFunc("GET /home", blogEP.GetHome)
-	http.HandleFunc("GET /post", blogEP.GetPost)
+	http.HandleFunc("GET /add-form", blogEP.GetAddForm)
+	http.HandleFunc("GET /edit-form/{id}", blogEP.GetEditForm)
+	http.HandleFunc("GET /posts", blogEP.GetPost)
 	http.HandleFunc("POST /post", blogEP.AddPost)
+	http.HandleFunc("PUT /post/{id}", blogEP.EditPost)
 	http.HandleFunc("DELETE /post/{id}", blogEP.DeletePost)
 
-	http.Handle("/static/", http.StripPrefix("/static", http.FileServer(http.Dir("public/"))))
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./public"))))
 
 	fmt.Println("Listening on localhost:3030")
 	http.ListenAndServe(":3030", nil)

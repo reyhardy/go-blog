@@ -5,16 +5,16 @@ import (
 	"maragu.dev/gomponents/html"
 )
 
-func Navbar(navbar ...string) gomponents.Node {
-	// navbar := []string{"Home", "About", "Contact"}
+func NavbarComponent(id string, children ...gomponents.Node) gomponents.Node {
 	return html.Nav(
+		html.ID(id),
 		html.Ul(
 			html.Li(html.Strong(gomponents.Text("Go-Blog"))),
 		),
 		html.Ul(
-			gomponents.Map(navbar, func(nb string) gomponents.Node {
-				return html.Li(html.A(html.Href("#"), gomponents.Text(nb)))
-			}),
+			html.Li(
+				gomponents.Group(children),
+			),
 		),
 	)
 }

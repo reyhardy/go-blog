@@ -5,10 +5,13 @@ import (
 	"maragu.dev/gomponents/html"
 )
 
-func ButtonElement(btnType, btnText string, attr ...gomponents.Node) gomponents.Node {
-	return html.Button(
-		html.Type(btnType),
-		gomponents.Text(btnText),
-		gomponents.Group(attr),
-	)
+func ButtonElement(id, btnType, btnText string, attr ...gomponents.Node) gomponents.Group {
+	return gomponents.Group{
+		html.Button(
+			html.ID(id),
+			html.Type(btnType),
+			gomponents.Text(btnText),
+			gomponents.Group(attr),
+		),
+	}
 }

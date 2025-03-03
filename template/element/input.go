@@ -5,7 +5,7 @@ import (
 	"maragu.dev/gomponents/html"
 )
 
-func InputElement(label, name, value, inputType string, attr ...gomponents.Node) gomponents.Node {
+func InputElement(label, name, inputType, dataBind string, attr ...gomponents.Node) gomponents.Node {
 	return html.Label(
 		gomponents.Text(label),
 		html.For(name),
@@ -13,20 +13,20 @@ func InputElement(label, name, value, inputType string, attr ...gomponents.Node)
 			html.ID(name),
 			html.Name(name),
 			html.Type(inputType),
-			html.Value(value),
+			html.Data("bind", dataBind),
 			gomponents.Group(attr),
 		),
 	)
 }
 
-func Textarea(label, name, value string, attr ...gomponents.Node) gomponents.Node {
+func Textarea(label, name, dataBind string, attr ...gomponents.Node) gomponents.Node {
 	return html.Label(
 		gomponents.Text(label),
 		html.For(name),
 		html.Textarea(
 			html.ID(name),
 			html.Name(name),
-			html.Value(value),
+			html.Data("bind", dataBind),
 			gomponents.Group(attr),
 		),
 	)

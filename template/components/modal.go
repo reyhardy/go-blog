@@ -1,35 +1,31 @@
 package components
 
 import (
+	"fmt"
+
 	"github.com/reyhardy/go-blog/template/element"
 	"maragu.dev/gomponents"
 	"maragu.dev/gomponents/html"
 )
 
-func ModalForm(btnName, modalHeader string) gomponents.Node {
+func ModalForm(id, btnName, modalHeader string, component ...gomponents.Node) gomponents.Node {
 	return html.Div(
-		gomponents.Attr("data-signals", "{open: false}"),
-		element.ButtonElement("button", btnName, gomponents.Attr("data-on-click", "$open = true")),
 		html.Dialog(
-			html.ID("dialog"),
-			gomponents.Attr("data-attr-open", "$open"),
-			gomponents.Attr("data-on-keydown__window", "evt.key === 'Escape' ? $open = false : null"),
+			html.ID(fmt.Sprintf("dialog-%s", id)),
+			html.Data("ref", "dialog"),
 			html.Article(
-				gomponents.Attr("data-on-click__outside__capture", "$open ? $open = false : null"),
+				// html.Data("on-click", "!$dialog.open ? null : $dialog.close()"),
 				html.Header(
-					element.ButtonElement("", "", html.Aria("label", "Close"), html.Rel("prev"), gomponents.Attr("data-on-click", "$open = !$open")),
+					element.ButtonElement("", "", "",
+						html.Aria("label", "Close"),
+						html.Rel("prev"),
+						html.Data("on-click", "$dialog.close()"),
+					),
 					html.H1(html.Strong(gomponents.Text(modalHeader))),
 				),
-				html.Form(
-					gomponents.Attr("data-on-submit", "@post('/post', {contentType: 'form'}); $open = false; @setAll('input.', '')"),
-					html.FieldSet(
-						element.InputElement("Title", "title", "", "text", gomponents.Attr("data-bind", "input.title")),
-						element.InputElement("Author", "author", "", "text", gomponents.Attr("data-bind", "input.author")),
-						element.Textarea("Content", "content", "", html.Rows("10"), gomponents.Attr("data-bind", "input.content")),
-						element.ButtonElement("submit", "Submit"),
-					),
-				),
+				gomponents.Group(component),
 			),
 		),
+		element.ButtonElement("", "button", btnName, html.Data("on-click", "$dialog.showModal(); console.log($dialog)")),
 	)
 }

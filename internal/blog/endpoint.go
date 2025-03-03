@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/reyhardy/go-blog/db/scylladb"
+	"github.com/reyhardy/go-blog/internal/ssevent"
 	datastar "github.com/starfederation/datastar/sdk/go"
 )
 
@@ -15,8 +17,11 @@ type endpoint struct {
 
 type API interface {
 	GetHome(w http.ResponseWriter, r *http.Request)
+	GetAddForm(w http.ResponseWriter, r *http.Request)
+	GetEditForm(w http.ResponseWriter, r *http.Request)
 	GetPost(w http.ResponseWriter, r *http.Request)
 	AddPost(w http.ResponseWriter, r *http.Request)
+	EditPost(w http.ResponseWriter, r *http.Request)
 	DeletePost(w http.ResponseWriter, r *http.Request)
 }
 
@@ -26,8 +31,88 @@ func NewAPI(session scylladb.Client) API {
 	}
 }
 
+const homeURL string = "/home"
+
 func (e *endpoint) GetHome(w http.ResponseWriter, r *http.Request) {
 	Home().Render(w)
+}
+
+func (e *endpoint) GetAddForm(w http.ResponseWriter, r *http.Request) {
+	inputSignal := InputSignal{
+		Input: Input{
+			Title:   "",
+			Author:  "",
+			Content: "",
+		},
+	}
+
+	viewSignal := ViewSignal{
+		View: "form",
+	}
+
+	fmt.Println("add form URL: \n", r.URL.Query())
+
+	sse := ssevent.NewSSEvent(w, r)
+
+	sse.MergeAllFragments(
+		ssevent.Fragment{
+			Node: AddForm(),
+			Opts: ssevent.FragmentMergeOpts{
+				datastar.WithMergeMode(datastar.FragmentMergeModeInner),
+				datastar.WithSelectorID(FormId),
+			},
+		},
+		ssevent.Fragment{
+			Node: NavbarBackButton(),
+		},
+	)
+
+	sse.ReplaceURL(url.URL{Path: r.URL.Path})
+
+	sse.MergeAllSignals(ssevent.Signals{Signal: inputSignal}, ssevent.Signals{Signal: viewSignal})
+}
+
+func (e *endpoint) GetEditForm(w http.ResponseWriter, r *http.Request) {
+	for _, post := range postList {
+		if post.ID == r.PathValue("id") {
+
+			inputSignal := InputSignal{
+				Input: Input{
+					Title:   post.Title,
+					Author:  post.Author,
+					Content: post.Content,
+				},
+			}
+
+			viewSignal := ViewSignal{
+				View: "form",
+			}
+
+			fmt.Println("edit form URL: \n", r.URL.Query())
+
+			sse := ssevent.NewSSEvent(w, r)
+
+			sse.MergeAllFragments(
+				ssevent.Fragment{
+					Node: EditForm(post),
+					Opts: ssevent.FragmentMergeOpts{
+						datastar.WithMergeMode(datastar.FragmentMergeModeInner),
+						datastar.WithSelectorID(FormId),
+					},
+				},
+				ssevent.Fragment{
+					Node: NavbarBackButton(),
+					Opts: ssevent.FragmentMergeOpts{
+						datastar.WithSelectorID(NavbarButtonId),
+					},
+				},
+			)
+
+			sse.ReplaceURL(url.URL{Path: r.URL.Path})
+
+			sse.MergeAllSignals(ssevent.Signals{Signal: inputSignal}, ssevent.Signals{Signal: viewSignal})
+		}
+	}
 }
 
 func (e *endpoint) GetPost(w http.ResponseWriter, r *http.Request) {
@@ -38,12 +123,30 @@ func (e *endpoint) GetPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sse := datastar.NewSSE(w, r)
+	fmt.Println("get post url: \n", r.URL)
 
-	err = sse.MergeFragments(PostList(res).String())
-	if err != nil {
-		sse.ConsoleError(err)
+	viewSignal := ViewSignal{
+		View: "posts",
 	}
+
+	sse := ssevent.NewSSEvent(w, r)
+
+	sse.MergeAllFragments(
+		ssevent.Fragment{
+			Node: PostList(res),
+			Opts: ssevent.FragmentMergeOpts{
+				datastar.WithMergeMode(datastar.FragmentMergeModeInner),
+				datastar.WithSelectorID(PostsId),
+			},
+		},
+		ssevent.Fragment{
+			Node: NavbarAddPostButton(),
+		},
+	)
+
+	sse.ReplaceURL(url.URL{Path: homeURL})
+
+	sse.MergeAllSignals(ssevent.Signals{Signal: viewSignal})
 }
 
 func (e *endpoint) AddPost(w http.ResponseWriter, r *http.Request) {
@@ -60,11 +163,79 @@ func (e *endpoint) AddPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sse := datastar.NewSSE(w, r)
-	err = sse.MergeFragments(PostCard(res).String(), datastar.WithMergePrepend(), datastar.WithSelectorID("postlist"))
-	if err != nil {
-		sse.ConsoleError(err)
+	viewSignal := ViewSignal{
+		View: "posts",
 	}
+
+	fmt.Println("add post url: \n", r.URL)
+
+	sse := ssevent.NewSSEvent(w, r)
+
+	sse.MergeAllFragments(
+		ssevent.Fragment{
+			Node: PostList(res),
+			Opts: ssevent.FragmentMergeOpts{
+				datastar.WithMergeMode(datastar.FragmentMergeModeInner),
+				datastar.WithSelectorID(PostsId),
+			},
+		},
+		ssevent.Fragment{
+			Node: NavbarAddPostButton(),
+		},
+	)
+
+	sse.MergeAllSignals(ssevent.Signals{Signal: viewSignal})
+
+	sse.ReplaceURL(url.URL{Path: homeURL})
+}
+
+func (e *endpoint) EditPost(w http.ResponseWriter, r *http.Request) {
+	postParams := &PostParams{
+		ID:      r.PathValue("id"),
+		Title:   r.FormValue("title"),
+		Author:  r.FormValue("author"),
+		Content: r.FormValue("content"),
+	}
+
+	inputSignal := InputSignal{
+		Input: Input{
+			Title:   postParams.Title,
+			Author:  postParams.Author,
+			Content: postParams.Content,
+		},
+	}
+
+	viewSignal := ViewSignal{
+		View: "posts",
+	}
+
+	res, err := e.svc.Update(r.Context(), Keyspace, postParams)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "update post error: %s", err)
+		return
+	}
+
+	fmt.Println("edit post url: \n", r.URL)
+
+	sse := ssevent.NewSSEvent(w, r)
+
+	sse.MergeAllFragments(
+		ssevent.Fragment{
+			Node: PostList(res),
+			Opts: ssevent.FragmentMergeOpts{
+				datastar.WithMergeMode(datastar.FragmentMergeModeInner),
+				datastar.WithSelectorID(PostsId),
+			},
+		},
+		ssevent.Fragment{
+			Node: NavbarAddPostButton(),
+		},
+	)
+
+	sse.MergeAllSignals(ssevent.Signals{Signal: inputSignal}, ssevent.Signals{Signal: viewSignal})
+
+	sse.ReplaceURL(url.URL{Path: homeURL})
 }
 
 func (e *endpoint) DeletePost(w http.ResponseWriter, r *http.Request) {
@@ -72,16 +243,24 @@ func (e *endpoint) DeletePost(w http.ResponseWriter, r *http.Request) {
 		ID: r.PathValue("id"),
 	}
 
-	err := e.svc.Delete(r.Context(), Keyspace, postParams)
+	res, err := e.svc.Delete(r.Context(), Keyspace, postParams)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "delete post error: %s", err)
 		return
 	}
 
-	sse := datastar.NewSSE(w, r)
-	err = sse.RemoveFragments(fmt.Sprintf("#post-%v", postParams.ID))
-	if err != nil {
-		sse.ConsoleError(err)
-	}
+	fmt.Println("delete post url: \n", r.URL)
+
+	sse := ssevent.NewSSEvent(w, r)
+
+	sse.MergeAllFragments(
+		ssevent.Fragment{
+			Node: PostList(res),
+			Opts: ssevent.FragmentMergeOpts{
+				datastar.WithMergeMode(datastar.FragmentMergeModeInner),
+				datastar.WithSelectorID(PostsId),
+			},
+		},
+	)
 }
