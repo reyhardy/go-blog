@@ -8,7 +8,7 @@ require (
 	github.com/gocql/gocql v1.7.0
 	github.com/scylladb/gocqlx/v3 v3.0.1
 	github.com/segmentio/ksuid v1.0.4
-	github.com/starfederation/datastar v1.0.0-beta.1
+	github.com/starfederation/datastar v1.0.0-beta.8
 )
 
 replace github.com/gocql/gocql => github.com/scylladb/gocql v1.7.3

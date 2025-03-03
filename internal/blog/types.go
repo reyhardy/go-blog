@@ -11,11 +11,6 @@ const (
 	TablePost string = "post"
 )
 
-// var PostMetadata = table.Metadata{
-// 	Name: "post",
-// 	Columns: []string{"id", "title", "content", "author", "created_at", "updated_at"},
-// }
-
 type Post struct {
 	ID      string `db:"id"`
 	Title   string `db:"title"`
@@ -28,7 +23,7 @@ type Post struct {
 
 type Posts []*Post
 
-func MapPost(postParams *PostParams, createdAt *time.Time, updatedAt *time.Time) *Post {
+func MapPost(postParams *PostParams, createdAt *time.Time) *Post {
 	post := &Post{
 		ID:      postParams.ID,
 		Title:   postParams.Title,
@@ -38,10 +33,9 @@ func MapPost(postParams *PostParams, createdAt *time.Time, updatedAt *time.Time)
 
 	if createdAt != nil {
 		post.CreatedAt = *createdAt
-	}
-
-	if updatedAt != nil {
-		post.UpdatedAt = *updatedAt
+		post.UpdatedAt = *createdAt
+	} else {
+		post.UpdatedAt = time.Now()
 	}
 
 	return post
@@ -54,7 +48,7 @@ func NewPost(postParams *PostParams) *Post {
 
 	postParams.ID = ksuid.String()
 
-	return MapPost(postParams, &createdAt, nil)
+	return MapPost(postParams, &createdAt)
 }
 
 type PostParams struct {
