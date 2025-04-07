@@ -38,7 +38,7 @@ func TestAdd(t *testing.T) {
 
 		createTable(t, testKeyspace, blog.TablePost)
 
-		addedPosts, err := svc.Add(context.Background(), testKeyspace, &postParams)
+		_, err := svc.Add(context.Background(), testKeyspace, &postParams)
 		if err != nil {
 			t.Errorf("error add: %s", err)
 		}
@@ -53,22 +53,14 @@ func TestAdd(t *testing.T) {
 		post := new(blog.Post)
 
 		if err = getPostQuery.Scan(
-			// &post.ID,
 			&post.Title,
 			&post.Content,
 			&post.Author,
 		); err != nil {
 			t.Errorf("scan query err: %v", err)
 		}
-
-		for _, addedPost := range addedPosts {
-			if addedPost.Title != postParams.Title {
-				t.Errorf("added %v got %v", postParams.Title, addedPost.Title)
-			}
-
-			if post.Title != addedPost.Title {
-				t.Errorf("got %v want %v", post.Title, addedPost.Title)
-			}
+		if post.Title != postParams.Title {
+			t.Errorf("added %v got %v", postParams.Title, post.Title)
 		}
 
 		dropTable(t, testKeyspace, blog.TablePost)
@@ -143,7 +135,7 @@ func TestDelete(t *testing.T) {
 				ID: tt.id,
 			}
 
-			_, err = svc.Delete(context.Background(), testKeyspace, &postToDelete)
+			err = svc.Delete(context.Background(), testKeyspace, &postToDelete)
 			if err != nil {
 				t.Errorf("delete post error: %v", err)
 			}
@@ -158,7 +150,6 @@ func TestDelete(t *testing.T) {
 			post := new(blog.Post)
 
 			err = getPostQuery.Scan(
-				&post.ID,
 				&post.Title,
 				&post.Content,
 				&post.Author,
@@ -235,7 +226,6 @@ func TestUpdate(t *testing.T) {
 			post := new(blog.Post)
 
 			err = getPostQuery.Scan(
-				// &post.ID,
 				&post.Title,
 				&post.Content,
 				&post.Author,

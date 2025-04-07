@@ -9,7 +9,7 @@ import (
 )
 
 type serverSentEvent struct {
-	sse *datastar.ServerSentEventGenerator
+	sseg *datastar.ServerSentEventGenerator
 }
 
 type SSE interface {
@@ -21,8 +21,8 @@ type SSE interface {
 }
 
 func NewSSEvent(w http.ResponseWriter, r *http.Request) SSE {
-	sse := datastar.NewSSE(w, r)
-	return &serverSentEvent{sse}
+	sseg := datastar.NewSSE(w, r)
+	return &serverSentEvent{sseg}
 }
 
 type FragmentMergeOpts []datastar.MergeFragmentOption
@@ -35,18 +35,18 @@ type Fragment struct {
 	Opts FragmentMergeOpts
 }
 
+func (f *Fragment) NodeString() string {
+	return gomponents.NodeFunc(f.Node.Render).String()
+}
+
 type Signals struct {
 	Signal any
 	Opts   SignalMergeOpts
 }
 
-func (f *Fragment) NodeString() string {
-	return gomponents.NodeFunc(f.Node.Render).String()
-}
-
 func (sse *serverSentEvent) MergeAllFragments(fragments ...Fragment) error {
 	for _, f := range fragments {
-		err := sse.sse.MergeFragments(f.NodeString(), f.Opts...)
+		err := sse.sseg.MergeFragments(f.NodeString(), f.Opts...)
 		if err != nil {
 			return err
 		}
@@ -57,7 +57,7 @@ func (sse *serverSentEvent) MergeAllFragments(fragments ...Fragment) error {
 
 func (sse *serverSentEvent) MergeAllSignals(signals ...Signals) error {
 	for _, s := range signals {
-		err := sse.sse.MarshalAndMergeSignals(s.Signal, s.Opts...)
+		err := sse.sseg.MarshalAndMergeSignals(s.Signal, s.Opts...)
 		if err != nil {
 			return err
 		}
@@ -67,13 +67,13 @@ func (sse *serverSentEvent) MergeAllSignals(signals ...Signals) error {
 }
 
 func (sse *serverSentEvent) RemoveAllFragments(selector string) error {
-	return sse.sse.RemoveFragments(selector)
+	return sse.sseg.RemoveFragments(selector)
 }
 
 func (sse *serverSentEvent) ReplaceURL(u url.URL) error {
-	return sse.sse.ReplaceURL(u)
+	return sse.sseg.ReplaceURL(u)
 }
 
 func (sse *serverSentEvent) Redirect(u url.URL) error {
-	return sse.sse.Redirect(u.Path)
+	return sse.sseg.Redirect(u.Path)
 }

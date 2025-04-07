@@ -16,7 +16,7 @@ func ModalForm(id, btnName, modalHeader string, component ...gomponents.Node) go
 			html.Article(
 				// html.Data("on-click", "!$dialog.open ? null : $dialog.close()"),
 				html.Header(
-					element.ButtonElement("", "", "",
+					element.ButtonElement("", "", "", "",
 						html.Aria("label", "Close"),
 						html.Rel("prev"),
 						html.Data("on-click", "$dialog.close()"),
@@ -26,6 +26,6 @@ func ModalForm(id, btnName, modalHeader string, component ...gomponents.Node) go
 				gomponents.Group(component),
 			),
 		),
-		element.ButtonElement("", "button", btnName, html.Data("on-click", "$dialog.showModal(); console.log($dialog)")),
+		element.ButtonElement("", "button", btnName, "", html.Data("on-click", "$dialog.showModal(); console.log($dialog)")),
 	)
 }

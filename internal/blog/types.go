@@ -34,9 +34,8 @@ func MapPost(postParams *PostParams, createdAt *time.Time) *Post {
 	if createdAt != nil {
 		post.CreatedAt = *createdAt
 		post.UpdatedAt = *createdAt
-	} else {
-		post.UpdatedAt = time.Now()
 	}
+	post.UpdatedAt = time.Now()
 
 	return post
 }

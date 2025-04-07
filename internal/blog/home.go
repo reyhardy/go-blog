@@ -1,8 +1,6 @@
 package blog
 
 import (
-	"github.com/reyhardy/go-blog/template/components"
-	"github.com/reyhardy/go-blog/template/element"
 	"github.com/reyhardy/go-blog/template/layout"
 	datastar "github.com/starfederation/datastar/sdk/go"
 	"maragu.dev/gomponents"
@@ -15,16 +13,18 @@ const (
 	FormId         string = "form"
 )
 
-func Home() gomponents.Node {
+func Home(view string) gomponents.Node {
 	return layout.Layout(
-		header(),
-		main(),
+		header(view),
+		body(view),
 	)
 }
 
-func header() gomponents.Node {
+func header(view string) gomponents.Node {
 	return html.Header(
-		components.NavbarComponent(NavbarButtonId, element.ButtonElement("", "button", "No Name")),
+		// components.NavbarComponent(NavbarButtonId, element.ButtonElement("", "button", "Add Post", "")),
+		gomponents.If(view == "post", NavbarAddPostButton()),
+		gomponents.If(view == "form", NavbarBackButton()),
 		html.HGroup(
 			html.H1(gomponents.Text("this is go-blog")),
 			html.P(gomponents.Text("we use picocss for styling")),
@@ -32,22 +32,18 @@ func header() gomponents.Node {
 	)
 }
 
-func main() gomponents.Node {
+func body(view string) gomponents.Node {
 	return html.Main(
-		html.Code(
-			html.Pre(
-				html.Data("text", "ctx.signals.JSON()"),
-			),
-		),
-		html.Data("signals", "{'view': 'posts'}"),
-		html.Div(
+		html.ID("main"),
+		// html.Code(
+		// 	html.Pre(
+		// 		html.Data("text", "ctx.signals.JSON()"),
+		// 	),
+		// ),
+		gomponents.If(view == "form", AddForm()),
+		gomponents.If(view == "post", html.Div(
 			html.ID(PostsId),
 			html.Data("on-load", datastar.GetSSE("/posts")),
-			html.Data("show", "$view ==='posts'"),
-		),
-		html.Div(
-			html.ID(FormId),
-			html.Data("show", "$view ==='form'"),
-		),
+		)),
 	)
 }

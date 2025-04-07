@@ -1,26 +1,31 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 
+	"github.com/labstack/echo/v4"
 	"github.com/reyhardy/go-blog/db/scylladb"
 	"github.com/reyhardy/go-blog/internal/blog"
 )
 
 func routes(dbClient scylladb.Client) {
+	e := echo.New()
 	blogEP := blog.NewAPI(dbClient)
 
-	http.HandleFunc("GET /home", blogEP.GetHome)
-	http.HandleFunc("GET /add-form", blogEP.GetAddForm)
+	// view
+	e.GET("/", blogEP.GetHomePage)
+	e.GET("/add-post", blogEP.GetAddPostFormPage)
+
+	// fragment
+	e.GET("/posts", blogEP.GetAllPostsFragment)
+	e.GET("/f/add-post", blogEP.GetAddPostFormFragment)
 	http.HandleFunc("GET /edit-form/{id}", blogEP.GetEditForm)
-	http.HandleFunc("GET /posts", blogEP.GetPost)
+	http.HandleFunc("GET /post/{id}", blogEP.GetPost)
 	http.HandleFunc("POST /post", blogEP.AddPost)
 	http.HandleFunc("PUT /post/{id}", blogEP.EditPost)
 	http.HandleFunc("DELETE /post/{id}", blogEP.DeletePost)
 
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./public"))))
+	e.Static("/static", "./public")
 
-	fmt.Println("Listening on localhost:3030")
-	http.ListenAndServe(":3030", nil)
+	e.Logger.Fatal(e.Start(":3030"))
 }

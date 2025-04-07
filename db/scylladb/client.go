@@ -23,10 +23,12 @@ func NewClient(cfg gocql.ClusterConfig) (*Client, error) {
 func (c *Client) QueryRow(ctx context.Context, qb qb.Builder, data ...any) (*gocqlx.Iterx, error) {
 	q := c.session.Query(qb.ToCql()).WithContext(ctx)
 	iter := q.Iter()
-	err := q.ExecRelease()
+	err := q.Exec()
 	return iter, err
 }
 
-func (c *Client) QueryExec(ctx context.Context, qb qb.Builder, data interface{}) error {
-	return c.session.Query(qb.ToCql()).WithContext(ctx).BindStruct(data).ExecRelease()
+func (c *Client) QueryExec(ctx context.Context, qb qb.Builder, data interface{}) (*gocqlx.Queryx, error) {
+	q := c.session.Query(qb.ToCql()).WithContext(ctx).BindStruct(data)
+	err := q.Exec()
+	return q, err
 }
