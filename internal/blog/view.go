@@ -12,7 +12,7 @@ import (
 
 func PostList(postList Posts) gomponents.Node {
 	return html.Div(
-		html.ID(PostsId),
+		// html.ID(PostsId),
 		gomponents.Map(postList, func(post *Post) gomponents.Node {
 			return PostCard(post)
 		}),
@@ -39,12 +39,12 @@ func PostCard(post *Post) gomponents.Node {
 	)
 }
 
-func AddForm() gomponents.Node {
+func FormAddPost() gomponents.Node {
 	return html.Div(
-		html.ID(FormId),
+		// html.ID(FormId),
 		html.Form(
-			html.ID("add-form"),
-			html.Data("on-submit", "@post('/post', {contentType: 'form', openWhenHidden: true,}); @setAll('input.', '')"),
+			html.ID("form-add-post"),
+			html.Data("on-submit", "@post('/post', {contentType: 'form', openWhenHidden: true}); @setAll('input.', '')"),
 			html.FieldSet(
 				html.Legend(gomponents.Text("Add Post")),
 				element.InputElement("Title", "title", "text", "input.title"),
@@ -82,7 +82,7 @@ func NavbarBackButton() gomponents.Node {
 			"button",
 			"Back",
 			"",
-			html.Data("on-click", datastar.GetSSE("/posts")),
+			html.Data("on-click", datastar.GetSSE("/f/posts")),
 		),
 	)
 }
@@ -95,7 +95,7 @@ func NavbarAddPostButton() gomponents.Node {
 			"button",
 			"Add Post",
 			"",
-			html.Data("on-click", datastar.GetSSE("/f/add-post")),
+			html.Data("on-click", datastar.GetSSE("/f/form/add-post")),
 		),
 	)
 }

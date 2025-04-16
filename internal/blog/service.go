@@ -57,7 +57,7 @@ func (s *service) Get(ctx context.Context, keyspace string, postParams *PostPara
 
 	var post *Post
 
-	if err = query.Select(post); err != nil {
+	if err = query.SelectRelease(post); err != nil {
 		return nil, err
 	}
 

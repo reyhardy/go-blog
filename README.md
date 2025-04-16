@@ -6,7 +6,7 @@ For HTML template, I use Gomponents, a Go library which able us to write HTML in
 ## Initialize ScyllaDB
 
 ```
-docker run --name go-blog -d scylladb/scylla -p 9042:9042
+docker run --name go-blog -d -p 9042:9042 scylladb/scylla:{tag}
 ```
 
 To check if ScyllaDB is already initialized, run `docker exec -it go-blog nodetool status.
@@ -42,6 +42,7 @@ Install go libs dependancies:
 
 ```
 go install github.com/air-verse/air@latest
+air -c .air.toml
 ```
 
 Then simply run `make dev`

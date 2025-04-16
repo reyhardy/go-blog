@@ -11,7 +11,7 @@ func Layout(children ...gomponents.Node) gomponents.Node {
 		Title: "go-blog",
 		Head: []gomponents.Node{
 			// html.Script(html.Type("module"), html.Src("/static/js/datastar-1-0-0-beta-1-709a1d5426cfe2c0.js")),
-			html.Script(html.Type("module"), html.Src("/static/js/datastar-1-0-0-beta-8-6ebd8eefd5e077e9.js")),
+			html.Script(html.Type("module"), html.Src("/static/js/datastar-1-0-0-beta-11-451cf4728ff6863d.js")),
 			html.Link(html.Rel("stylesheet"), html.Href("/static/css/pico.min.css")),
 		},
 		Body: []gomponents.Node{

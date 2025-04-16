@@ -1,7 +1,6 @@
 package blog
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -23,10 +22,11 @@ type API interface {
 	GetAddPostFormFragment(c echo.Context) error
 	GetEditForm(w http.ResponseWriter, r *http.Request)
 	GetAllPostsFragment(c echo.Context) error
+	AddPostEcho(c echo.Context) error
 	GetPost(w http.ResponseWriter, r *http.Request)
-	AddPost(w http.ResponseWriter, r *http.Request)
 	EditPost(w http.ResponseWriter, r *http.Request)
-	DeletePost(w http.ResponseWriter, r *http.Request)
+	// DeletePost(w http.ResponseWriter, r *http.Request)
+	DeletePostEcho(c echo.Context) error
 }
 
 func NewAPI(session scylladb.Client) API {
@@ -35,25 +35,29 @@ func NewAPI(session scylladb.Client) API {
 	}
 }
 
-const homeURL string = "/home"
+const homeURL string = "/"
 
 func (e *endpoint) GetHomePage(c echo.Context) error {
-	return c.HTML(http.StatusOK, gomponents.NodeFunc(Home("post").Render).String())
+	return c.HTML(http.StatusOK, gomponents.NodeFunc(Home(PostsId).Render).String())
 }
 
 func (e *endpoint) GetAddPostFormPage(c echo.Context) error {
-	return c.HTML(http.StatusOK, gomponents.NodeFunc(Home("form").Render).String())
+	return c.HTML(http.StatusOK, gomponents.NodeFunc(Home(FormId).Render).String())
 }
 
 func (e *endpoint) GetAddPostFormFragment(c echo.Context) error {
+	viewSignal := ViewSignal{
+		View: FormId,
+	}
+
 	sse := ssevent.NewSSEvent(c.Response().Writer, c.Request())
 
 	err := sse.MergeAllFragments(
 		ssevent.Fragment{
-			Node: AddForm(),
+			Node: FormAddPost(),
 			Opts: ssevent.FragmentMergeOpts{
-				datastar.WithMergeMode(datastar.FragmentMergeModeInner),
-				datastar.WithSelectorID("main"),
+				datastar.WithMergeInner(),
+				datastar.WithSelectorID(FormId),
 			},
 		},
 		ssevent.Fragment{
@@ -64,11 +68,13 @@ func (e *endpoint) GetAddPostFormFragment(c echo.Context) error {
 		return err
 	}
 
-	if err = sse.ReplaceURL(url.URL{Path: "/add-post"}); err != nil {
+	sse.MergeAllSignals(ssevent.Signals{Signal: viewSignal})
+
+	if err = sse.ReplaceURL(url.URL{Path: "/form/add-post"}); err != nil {
 		return err
 	}
 
-	return nil
+	return c.String(http.StatusOK, "add post form fragment loaded")
 }
 
 func (e *endpoint) GetEditForm(w http.ResponseWriter, r *http.Request) {
@@ -93,7 +99,7 @@ func (e *endpoint) GetEditForm(w http.ResponseWriter, r *http.Request) {
 				ssevent.Fragment{
 					Node: EditForm(post),
 					Opts: ssevent.FragmentMergeOpts{
-						datastar.WithMergeMode(datastar.FragmentMergeModeOuter),
+						datastar.WithMergeInner(),
 						datastar.WithSelectorID("main"),
 					},
 				},
@@ -110,9 +116,13 @@ func (e *endpoint) GetEditForm(w http.ResponseWriter, r *http.Request) {
 }
 
 func (e *endpoint) GetAllPostsFragment(c echo.Context) error {
-	res, err := e.svc.SelectAll(context.Background(), Keyspace)
+	res, err := e.svc.SelectAll(c.Request().Context(), Keyspace)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, fmt.Sprintf("select all post error: %s", err))
+	}
+
+	viewSignal := ViewSignal{
+		View: PostsId,
 	}
 
 	sse := ssevent.NewSSEvent(c.Response().Writer, c.Request())
@@ -121,8 +131,8 @@ func (e *endpoint) GetAllPostsFragment(c echo.Context) error {
 		ssevent.Fragment{
 			Node: PostList(res),
 			Opts: ssevent.FragmentMergeOpts{
-				datastar.WithMergeMode(datastar.FragmentMergeModeInner),
-				datastar.WithSelectorID("main"),
+				datastar.WithMergeInner(),
+				datastar.WithSelectorID(PostsId),
 			},
 		},
 		ssevent.Fragment{
@@ -133,11 +143,13 @@ func (e *endpoint) GetAllPostsFragment(c echo.Context) error {
 		return err
 	}
 
-	if err = sse.ReplaceURL(url.URL{Path: "/"}); err != nil {
+	sse.MergeAllSignals(ssevent.Signals{Signal: viewSignal})
+
+	if err = sse.ReplaceURL(url.URL{Path: homeURL}); err != nil {
 		return err
 	}
 
-	return nil
+	return c.String(http.StatusOK, "get all post fragment loaded")
 }
 
 func (e *endpoint) GetPost(w http.ResponseWriter, r *http.Request) {
@@ -229,6 +241,46 @@ func (e *endpoint) GetPost(w http.ResponseWriter, r *http.Request) {
 	// sse.MergeAllSignals(ssevent.Signals{Signal: viewSignal})
 
 	// sse.ReplaceURL(url.URL{Path: homeURL})
+}
+
+func (e *endpoint) AddPostEcho(c echo.Context) error {
+	postParams := &PostParams{
+		Title:   c.FormValue("title"),
+		Author:  c.FormValue("author"),
+		Content: c.FormValue("content"),
+	}
+
+	_, err := e.svc.Add(c.Request().Context(), Keyspace, postParams)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, fmt.Sprintf("add post error: %s", err))
+	}
+
+	sse := ssevent.NewSSEvent(c.Response(), c.Request())
+
+	// err = sse.MergeAllFragments(
+	// 	ssevent.Fragment{
+	// 		Node: PostCard(res),
+	// 		Opts: ssevent.FragmentMergeOpts{
+	// 			datastar.WithSelectorID(PostsId),
+	// 			datastar.WithMergePrepend(),
+	// 		},
+	// 	},
+	// 	ssevent.Fragment{
+	// 		Node: NavbarAddPostButton(),
+	// 	},
+	// )
+	// if err != nil {
+	// 	return err
+	// }
+
+	// err = sse.ReplaceURL(url.URL{Path: homeURL})
+	// if err != nil {
+	// 	return err
+	// }
+
+	sse.Redirect(url.URL{Path: homeURL})
+
+	return c.String(http.StatusOK, fmt.Sprintf("successfully added %s to posts", postParams.Title))
 }
 
 func (e *endpoint) AddPost(w http.ResponseWriter, r *http.Request) {
@@ -326,4 +378,25 @@ func (e *endpoint) DeletePost(w http.ResponseWriter, r *http.Request) {
 
 	sse := ssevent.NewSSEvent(w, r)
 	sse.RemoveAllFragments(fmt.Sprintf("#post-%s", postParams.ID))
+}
+
+func (e *endpoint) DeletePostEcho(c echo.Context) error {
+	postParams := &PostParams{
+		ID: c.Param("id"),
+	}
+
+	err := e.svc.Delete(c.Request().Context(), Keyspace, postParams)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, fmt.Sprintf("delete post error: %s", err))
+	}
+
+	sse := ssevent.NewSSEvent(c.Response(), c.Request())
+	err = sse.RemoveAllFragments(fmt.Sprintf("#post-%s", postParams.ID))
+	if err != nil {
+		return c.String(http.StatusBadRequest, "error remove fragment")
+	}
+
+	fmt.Printf("post id: %s \n", postParams.ID)
+
+	return c.NoContent(http.StatusOK)
 }
