@@ -1,23 +1,27 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
-
-	"github.com/reyhardy/go-blog/db/scylladb"
+	"github.com/labstack/echo/v4"
 	"github.com/reyhardy/go-blog/internal/blog"
+	"github.com/reyhardy/go-blog/pkg/pgsql"
 )
 
-func routes(dbClient scylladb.Client) {
+func routes(dbClient pgsql.Client) {
 	blogEP := blog.NewAPI(dbClient)
 
-	http.HandleFunc("GET /home", blogEP.GetHome)
-	http.HandleFunc("GET /getpost", blogEP.GetPost)
-	http.HandleFunc("POST /addpost", blogEP.AddPost)
-	http.HandleFunc("DELETE /deletepost/{id}", blogEP.DeletePost)
+	e := echo.New()
 
-	http.Handle("/static/", http.StripPrefix("/static", http.FileServer(http.Dir("public/"))))
+	// e.Use(middleware.Recover())
+	// e.Use(middleware.Logger())
 
-	fmt.Println("Listening on localhost:3030")
-	http.ListenAndServe(":3030", nil)
+	e.GET("/", blogEP.GetHome)
+
+	g := e.Group("/api")
+	g.GET("/posts", blogEP.GetPost)
+	g.POST("/posts", blogEP.AddPost)
+	g.DELETE("/post/:id", blogEP.DeletePost)
+	g.PATCH("/post/:id", blogEP.UpdatePost)
+
+	e.Static("/static", "public")
+	e.Logger.Fatal(e.Start(":3000"))
 }

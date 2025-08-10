@@ -3,35 +3,41 @@ package blog
 import (
 	"context"
 	"fmt"
+	"time"
 
-	"github.com/reyhardy/go-blog/db/scylladb"
-	"github.com/scylladb/gocqlx/v3/qb"
+	"github.com/reyhardy/go-blog/pkg/pgsql"
 )
 
 type service struct {
-	db scylladb.Client
+	db pgsql.Client
 }
 
 type servicer interface {
-	Add(ctx context.Context, keyspace string, postParams *PostParams) (*Post, error)
-	Get(ctx context.Context, keyspace string) (*Post, error)
-	SelectAll(ctx context.Context, keyspace string) (Posts, error)
-	Update() (*Post, error)
-	// Delete(ctx context.Context, keyspace string, postParams *PostParams) error
-	Delete(ctx context.Context, keyspace string, postParams *PostParams) error
+	Add(ctx context.Context, postParams *PostParams) (*Post, error)
+	Get(ctx context.Context) (*Post, error)
+	SelectAll(ctx context.Context) (Posts, error)
+	Update(ctx context.Context, postParams *PostParams) (*Post, error)
+	Delete(ctx context.Context, postParams *PostParams) error
 }
 
-func newService(session scylladb.Client) servicer {
-	return &service{session}
+func newService(db pgsql.Client) servicer {
+	return &service{db}
 }
 
-func (s *service) Add(ctx context.Context, keyspace string, postParams *PostParams) (*Post, error) {
-	q := qb.Insert(fmt.Sprintf("%s.%s", keyspace, TablePost)).Columns("id", "title", "content", "author", "created_at", "updated_at")
-	// q := qb.Insert(TablePost).Columns("id", "title", "content", "author", "created_at", "updated_at")
+func (s *service) Add(ctx context.Context, postParams *PostParams) (*Post, error) {
+	q := fmt.Sprintf(
+		"INSERT INTO %s (id, title, content, author) VALUES($1, $2, $3, $4);",
+		TablePost,
+	)
 
 	post := NewPost(postParams)
 
-	err := s.db.QueryExec(ctx, q, post)
+	err := s.db.Exec(ctx, q,
+		post.ID,
+		post.Title,
+		post.Content,
+		post.Author,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -39,33 +45,44 @@ func (s *service) Add(ctx context.Context, keyspace string, postParams *PostPara
 	return post, nil
 }
 
-func (s *service) Get(ctx context.Context, keyspace string) (*Post, error) {
+func (s *service) Get(ctx context.Context) (*Post, error) {
 	return nil, nil
 }
 
-func (s *service) SelectAll(ctx context.Context, keyspace string) (Posts, error) {
-	q := qb.Select(fmt.Sprintf("%s.%s", keyspace, TablePost)).Columns("id", "title", "content", "author")
-	// q := qb.Select(TablePost).Columns("id", "title", "content", "author")
-	iter, err := s.db.QueryRow(ctx, q)
+func (s *service) SelectAll(ctx context.Context) (Posts, error) {
+	q := fmt.Sprintf("SELECT id, title, content, author, created_at, updated_at FROM %s;", TablePost)
+
+	var posts Posts
+	err := s.db.Query(ctx, q, &posts)
 	if err != nil {
 		return nil, err
 	}
-	defer iter.Close()
 
-	var postList Posts
+	return posts, nil
+}
 
-	if err = iter.Select(&postList); err != nil {
+func (s *service) Update(ctx context.Context, postParams *PostParams) (*Post, error) {
+	q := fmt.Sprintf("UPDATE %s SET title = $1, content = $2, author = $3, updated_at = $4 WHERE id = $5;", TablePost)
+
+	updatedAt := time.Now()
+
+	post := MapPost(postParams, nil, &updatedAt)
+
+	if err := s.db.Exec(ctx, q,
+		post.Title,
+		post.Content,
+		post.Author,
+		post.UpdatedAt,
+		post.ID,
+	); err != nil {
 		return nil, err
 	}
 
-	return postList, nil
+	return post, nil
 }
 
-func (s *service) Update() (*Post, error) {
-	return nil, nil
-}
+func (s *service) Delete(ctx context.Context, postParams *PostParams) error {
+	q := fmt.Sprintf("DELETE FROM %s WHERE id = $1;", TablePost)
 
-func (s *service) Delete(ctx context.Context, keyspace string, postParams *PostParams) error {
-	q := qb.Delete(fmt.Sprintf("%s.%s", keyspace, TablePost)).Where(qb.Eq("id"))
-	return s.db.QueryExec(ctx, q, postParams)
+	return s.db.Exec(ctx, q, postParams.ID)
 }

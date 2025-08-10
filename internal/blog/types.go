@@ -7,23 +7,17 @@ import (
 )
 
 const (
-	Keyspace  string = "blog"
 	TablePost string = "post"
 )
 
-// var PostMetadata = table.Metadata{
-// 	Name: "post",
-// 	Columns: []string{"id", "title", "content", "author", "created_at", "updated_at"},
-// }
-
 type Post struct {
-	ID      string `db:"id"`
-	Title   string `db:"title"`
-	Content string `db:"content"`
-	Author  string `db:"author"`
+	ID      string `json:"id" db:"id"`
+	Title   string `json:"title" db:"title"`
+	Content string `json:"content" db:"content"`
+	Author  string `json:"author" db:"author"`
 
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
+	CreatedAt time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 }
 
 type Posts []*Post
@@ -42,6 +36,8 @@ func MapPost(postParams *PostParams, createdAt *time.Time, updatedAt *time.Time)
 
 	if updatedAt != nil {
 		post.UpdatedAt = *updatedAt
+	} else {
+		post.UpdatedAt = *createdAt
 	}
 
 	return post
@@ -58,8 +54,8 @@ func NewPost(postParams *PostParams) *Post {
 }
 
 type PostParams struct {
-	ID      string `db:"id"`
-	Title   string `db:"title"`
-	Content string `db:"content"`
-	Author  string `db:"author"`
+	ID      string `json:"id" db:"id"`
+	Title   string `json:"title" db:"title"`
+	Content string `json:"content" db:"content"`
+	Author  string `json:"author" db:"author"`
 }

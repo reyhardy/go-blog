@@ -8,31 +8,149 @@ import (
 	"maragu.dev/gomponents/html"
 )
 
-func PostList(postList Posts) gomponents.Node {
+// post view
+func PostList(posts Posts) gomponents.Node {
 	return html.Div(
-		html.ID("postlist"),
-		gomponents.Map(postList, func(post *Post) gomponents.Node {
+		html.ID("posts"),
+		gomponents.Map(posts, func(post *Post) gomponents.Node {
 			return PostCard(post)
-		},
-		))
+		}),
+	)
 }
 
 func PostCard(post *Post) gomponents.Node {
 	return html.Article(
 		html.ID(fmt.Sprintf("post-%s", post.ID)),
-		html.Header(html.H1(gomponents.Text(post.Title))),
-		html.P(gomponents.Text(post.Content)),
-		html.P(html.Cite(gomponents.Text(fmt.Sprintf("- %s", post.Author)))),
+		html.Header(
+			html.H3(
+				html.ID("post_title"),
+				gomponents.Textf("Title: %s", post.Title),
+			),
+		),
+		html.P(
+			html.ID("post_content"),
+			gomponents.Text(post.Content),
+		),
 		html.Footer(
-			element.ButtonElement("button", "Delete", gomponents.Attr("data-on-click", fmt.Sprintf("@delete('/deletepost/%s')", post.ID))),
+			html.P(
+				html.Cite(
+					html.ID("post_author"),
+					gomponents.Textf("Posted By: %s", post.Author),
+				),
+			),
+			html.P(
+				html.Data("ignore-morph", ""),
+				html.ID("post_created_at"),
+				gomponents.Textf("Created At: %v", post.CreatedAt.Format("January 2, 2006 @ 15:04:05")),
+			),
+			gomponents.If(
+				post.UpdatedAt != post.CreatedAt,
+				html.P(
+					html.ID("post_updated_at"),
+					gomponents.Textf("Updated At: %v", post.UpdatedAt.Format("January 2, 2006 @ 15:04:05")),
+				),
+			),
+			html.Div(
+				html.ID("grid"),
+				element.ButtonElement(
+					"button",
+					"Delete Post",
+					html.Data("on-click", fmt.Sprintf(`@delete("/api/post/%s")`, post.ID)),
+				),
+				ModalEditPost(post),
+			),
 		),
 	)
 }
 
-func RenderPostList(postList Posts) gomponents.NodeFunc {
-	return PostList(postList).Render
+func ModalAddPost() gomponents.Node {
+	return html.Div(
+		html.Dialog(
+			html.Data("ref", "modalAdd"),
+			html.Article(
+				html.Data("on-click__outside__capture", "$modalAdd.close()"),
+				html.Header(
+					html.Button(
+						html.Aria("label", "Close"),
+						html.Rel("prev"),
+						html.Data("on-click", "$modalAdd.close()"),
+					),
+				),
+				html.Form(
+					html.ID("form-add-post"),
+					html.FieldSet(
+						html.Legend(html.H3(gomponents.Text("Add New Post"))),
+						element.InputElement("Post Title", "title", "", "text"),
+						element.InputElement("Author Name", "author", "", "text"),
+						element.Textarea("Post Content", "content", "", 5),
+					),
+				),
+				html.Footer(
+					html.Div(
+						html.Button(
+							html.Data("on-click",
+								`@post("/api/posts", {contentType: "form", selector: "#form-add-post"}); 
+								$modalAdd.close();
+								@setAll("", {include: /^input\./})
+							`),
+							html.Type("button"),
+							html.Value("Add Post"),
+							gomponents.Text("Add Post"),
+						),
+					),
+				),
+			),
+		),
+		element.ButtonElement(
+			"submit",
+			"Add Post",
+			html.Data("on-click", `$modalAdd.showModal()`),
+		),
+	)
 }
 
-func RenderPostCard(post *Post) gomponents.NodeFunc {
-	return PostCard(post).Render
+func ModalEditPost(post *Post) gomponents.Node {
+	return html.Div(
+		html.Dialog(
+			html.Data("ref", fmt.Sprintf("_modalEdit_%s", post.ID)),
+			html.Article(
+				html.Data("on-click__outside__capture", fmt.Sprintf("$_modalEdit_%s.close()", post.ID)),
+				html.Header(
+					html.Button(
+						html.Aria("label", "Close"),
+						html.Rel("prev"),
+						html.Data("on-click", fmt.Sprintf("$_modalEdit_%s.close()", post.ID)),
+					),
+				),
+				html.Form(
+					html.ID(fmt.Sprintf("form-edit-post-%s", post.ID)),
+					html.FieldSet(
+						html.Legend(html.H3(gomponents.Text("Edit Post"))),
+						element.InputElement("Post Title", "title", post.Title, "text"),
+						element.InputElement("Author Name", "author", post.Author, "text"),
+						element.Textarea("Post Content", "content", post.Content, 5),
+					),
+				),
+				html.Footer(
+					html.Div(
+						html.Button(
+							html.Data("on-click",
+								fmt.Sprintf(`@patch("/api/post/%s", {contentType: "form", selector: "#form-edit-post-%s"}); 
+								$_modalEdit_%s.close();
+								@setAll("", {include: /^input\./})
+							`, post.ID, post.ID, post.ID)),
+							html.Type("button"),
+							html.Value("Edit Post"),
+							gomponents.Text("Edit Post"),
+						),
+					),
+				),
+			),
+		),
+		element.ButtonElement(
+			"button",
+			"Edit Post",
+			html.Data("on-click", fmt.Sprintf("$_modalEdit_%s.showModal()", post.ID)),
+		),
+	)
 }

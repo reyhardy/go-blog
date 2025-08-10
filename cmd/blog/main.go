@@ -1,16 +1,16 @@
 package main
 
 import (
+	"context"
 	"log"
 
-	"github.com/gocql/gocql"
-	"github.com/reyhardy/go-blog/db/scylladb"
+	"github.com/reyhardy/go-blog/pkg/pgsql"
 )
 
 func main() {
-	dbClient, err := scylladb.NewClient(*gocql.NewCluster("localhost"))
+	dbClient, err := pgsql.NewClient(context.Background(), "postgres://go_blog_user:go_blog_password@localhost:5432/go_blog_db?sslmode=disable")
 	if err != nil {
-		log.Fatalln("error init client db", err)
+		log.Fatalln("error init pg client", err)
 	}
 	routes(*dbClient)
 }

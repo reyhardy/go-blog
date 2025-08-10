@@ -1,29 +1,42 @@
 module github.com/reyhardy/go-blog
 
-go 1.23.3
+go 1.24
 
-require maragu.dev/gomponents v1.0.0 // direct
+toolchain go1.24.5
 
 require (
-	github.com/gocql/gocql v1.7.0
-	github.com/scylladb/gocqlx/v3 v3.0.1
+	github.com/jackc/pgx/v5 v5.7.5
 	github.com/segmentio/ksuid v1.0.4
-	github.com/starfederation/datastar v1.0.0-beta.1
+	maragu.dev/gomponents v1.1.0 // direct
 )
 
-replace github.com/gocql/gocql => github.com/scylladb/gocql v1.7.3
+require (
+	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
+	github.com/georgysavva/scany/v2 v2.1.4
+	github.com/jackc/pgpassfile v1.0.0 // indirect
+	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
+	github.com/jackc/puddle/v2 v2.2.2 // indirect
+	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
+	github.com/valyala/bytebufferpool v1.0.0 // indirect
+	golang.org/x/crypto v0.40.0 // indirect
+	golang.org/x/sync v0.16.0 // indirect
+	golang.org/x/text v0.27.0 // indirect
+)
 
 require (
-	github.com/a-h/templ v0.3.819 // indirect
-	github.com/delaneyj/gostar v0.8.0 // indirect
-	github.com/goccy/go-json v0.10.4 // indirect
-	github.com/golang/snappy v0.0.4 // indirect
-	github.com/hailocab/go-hostpool v0.0.0-20160125115350-e80d13ce29ed // indirect
-	github.com/igrmk/treemap/v2 v2.0.1 // indirect
-	github.com/samber/lo v1.48.0 // indirect
-	github.com/scylladb/go-reflectx v1.0.1 // indirect
-	github.com/valyala/bytebufferpool v1.0.0 // indirect
-	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8 // indirect
-	golang.org/x/text v0.21.0 // indirect
-	gopkg.in/inf.v0 v0.9.1 // indirect
+	github.com/CAFxX/httpcompression v0.0.9 // indirect
+	github.com/andybalholm/brotli v1.0.5 // indirect
+	github.com/klauspost/compress v1.18.0 // indirect
+	github.com/stretchr/objx v0.5.2 // indirect
+)
+
+require (
+	github.com/labstack/echo/v4 v4.13.4
+	github.com/labstack/gommon v0.4.2 // indirect
+	github.com/mattn/go-colorable v0.1.14 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
+	github.com/starfederation/datastar-go v1.0.1
+	github.com/valyala/fasttemplate v1.2.2 // indirect
+	golang.org/x/net v0.41.0 // indirect
+	golang.org/x/sys v0.34.0 // indirect
 )

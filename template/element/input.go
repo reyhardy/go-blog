@@ -12,25 +12,28 @@ func InputElement(label, name, value, inputType string, attr ...gomponents.Node)
 		gomponents.Text(label),
 		html.For(name),
 		html.Input(
-			gomponents.Attr(fmt.Sprintf("data-bind-%s", name)),
+			html.Data(fmt.Sprintf("bind-input.%s", name), ""),
 			html.ID(name),
 			html.Name(name),
 			html.Type(inputType),
 			html.Value(value),
+			// html.Placeholder(value),
 			gomponents.Group(attr),
 		),
 	)
 }
 
-func Textarea(label, name, value string, attr ...gomponents.Node) gomponents.Node {
+func Textarea(label, name, value string, rows int, attr ...gomponents.Node) gomponents.Node {
 	return html.Label(
 		gomponents.Text(label),
 		html.For(name),
 		html.Textarea(
-			gomponents.Attr(fmt.Sprintf("data-bind-%s", name)),
+			html.Data(fmt.Sprintf("bind-input.%s", name), ""),
 			html.ID(name),
 			html.Name(name),
 			html.Value(value),
+			// html.Placeholder(value),
+			html.Rows(fmt.Sprintf("%d", rows)),
 			gomponents.Group(attr),
 		),
 	)
