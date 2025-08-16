@@ -8,19 +8,19 @@ import (
 	"github.com/reyhardy/go-blog/pkg/pgsql"
 )
 
-type listener struct {
+type listen struct {
 	db pgsql.Client
 }
 
-// type dbListener interface {
-// 	ListenForNotification(ctx context.Context, channel string)
-// }
+type listener interface {
+	ListenForNotification(ctx context.Context, channel string, notificationC chan<- Post)
+}
 
-// func newListener(db pgsql.Client) dbListener {
-// 	return &listener{db}
-// }
+func NewListener(db pgsql.Client) listener {
+	return &listen{db}
+}
 
-func (l *listener) ListenForNotification(ctx context.Context, channel string, notificationC chan<- Post) {
+func (l *listen) ListenForNotification(ctx context.Context, channel string, notificationC chan<- Post) {
 	conn, err := l.db.Acquire(ctx)
 	if err != nil {
 		fmt.Println("error acquire:", err)
@@ -32,20 +32,21 @@ func (l *listener) ListenForNotification(ctx context.Context, channel string, no
 	}
 
 	if _, err := conn.Exec(ctx, fmt.Sprintf("LISTEN %s;", channel)); err != nil {
-		fmt.Println("error notify:", err)
+		fmt.Println("error listening:", err)
 	}
 
 	fmt.Printf("listening to %s...\n", channel)
 
 	for {
 		var post Post
-		notification, err := conn.Conn().WaitForNotification(ctx)
+		n, err := conn.Conn().WaitForNotification(ctx)
 		if err != nil {
 			fmt.Println("error notification:", err)
 			break
 		}
-		json.Unmarshal([]byte(notification.Payload), &post)
-		fmt.Printf("post struct: \n%+v\n", post)
+
+		fmt.Printf("notification payload: %v\n", n.Payload)
+		json.Unmarshal([]byte(n.Payload), &post)
 
 		notificationC <- post
 	}

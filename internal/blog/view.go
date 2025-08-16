@@ -12,6 +12,7 @@ import (
 func PostList(posts Posts) gomponents.Node {
 	return html.Div(
 		html.ID("posts"),
+		html.Data("on-load", `@get("/api/posts/sse")`),
 		gomponents.Map(posts, func(post *Post) gomponents.Node {
 			return PostCard(post)
 		}),
@@ -41,13 +42,13 @@ func PostCard(post *Post) gomponents.Node {
 			html.P(
 				html.Data("ignore-morph", ""),
 				html.ID("post_created_at"),
-				gomponents.Textf("Created At: %v", post.CreatedAt.Format("January 2, 2006 @ 15:04:05")),
+				gomponents.Textf("Created At: %v", post.CreatedAt.Format("January 2, 2006 @ 3:04:05 PM")),
 			),
 			gomponents.If(
 				post.UpdatedAt != post.CreatedAt,
 				html.P(
 					html.ID("post_updated_at"),
-					gomponents.Textf("Updated At: %v", post.UpdatedAt.Format("January 2, 2006 @ 15:04:05")),
+					gomponents.Textf("Updated At: %v", post.UpdatedAt.Format("January 2, 2006 @ 3:04:05 PM")),
 				),
 			),
 			html.Div(

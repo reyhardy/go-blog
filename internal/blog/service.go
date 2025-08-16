@@ -13,7 +13,7 @@ type service struct {
 }
 
 type servicer interface {
-	Add(ctx context.Context, postParams *PostParams) (*Post, error)
+	Add(ctx context.Context, postParams *PostParams) error
 	Get(ctx context.Context) (*Post, error)
 	SelectAll(ctx context.Context) (Posts, error)
 	Update(ctx context.Context, postParams *PostParams) (*Post, error)
@@ -24,9 +24,9 @@ func newService(db pgsql.Client) servicer {
 	return &service{db}
 }
 
-func (s *service) Add(ctx context.Context, postParams *PostParams) (*Post, error) {
+func (s *service) Add(ctx context.Context, postParams *PostParams) error {
 	q := fmt.Sprintf(
-		"INSERT INTO %s (id, title, content, author) VALUES($1, $2, $3, $4);",
+		"INSERT INTO %s (id, title, content, author, created_at, updated_at) VALUES($1, $2, $3, $4, $5, $6);",
 		TablePost,
 	)
 
@@ -37,12 +37,16 @@ func (s *service) Add(ctx context.Context, postParams *PostParams) (*Post, error
 		post.Title,
 		post.Content,
 		post.Author,
+		post.CreatedAt,
+		post.UpdatedAt,
 	)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return post, nil
+	fmt.Printf("new post: %+v\n", post)
+
+	return nil
 }
 
 func (s *service) Get(ctx context.Context) (*Post, error) {

@@ -22,7 +22,7 @@ type endpoint struct {
 
 type API interface {
 	GetHome(c echo.Context) error
-	GetPost(c echo.Context) error
+	GetPostSSE(c echo.Context) error
 	AddPost(c echo.Context) error
 	DeletePost(c echo.Context) error
 	UpdatePost(c echo.Context) error
@@ -31,39 +31,47 @@ type API interface {
 func NewAPI(db pgsql.Client) API {
 	return &endpoint{
 		svc:      newService(db),
-		listener: listener{db: db},
+		listener: NewListener(db),
 	}
 }
 
 func (e *endpoint) GetHome(c echo.Context) error {
-	return Home().Render(c.Response().Writer)
-}
-
-func (e *endpoint) GetPost(c echo.Context) error {
 	res, err := e.svc.SelectAll(c.Request().Context())
 	if err != nil {
 		c.Response().WriteHeader(echo.ErrInternalServerError.Code)
 		fmt.Fprintf(c.Response().Writer, "Error fetching posts: %v", err)
 	}
 
-	sse := datastar.NewSSE(c.Response().Writer, c.Request())
+	return Home(res).Render(c.Response().Writer)
+}
 
-	if err := sse.PatchElements(
-		gomponents.NodeFunc(PostList(res).Render).String(),
-	); err != nil {
-		return err
-	}
+func (e *endpoint) GetPostSSE(c echo.Context) error {
 	notiChan := make(chan Post)
+
+	sse := datastar.NewSSE(c.Response().Writer, c.Request())
 
 	go e.listener.ListenForNotification(c.Request().Context(), "db_changes", notiChan)
 
-	for resChan := range notiChan {
-		fmt.Printf("resChan: \n%+v\n", resChan)
-		sse.PatchElements(
-			gomponents.NodeFunc(PostCard(&resChan).Render).String(),
-			datastar.WithModeAppend(),
-			datastar.WithSelectorID("posts"),
-		)
+	for res := range notiChan {
+		select {
+		case <-c.Request().Context().Done():
+			c.Response().WriteHeader(echo.ErrInternalServerError.Code)
+			fmt.Fprintf(c.Response().Writer, "Error streaming posts: %v", c.Request().Context().Err())
+		default:
+			if res.IsDeleted {
+				sse.PatchElements(
+					"",
+					datastar.WithModeRemove(),
+					datastar.WithSelectorID(fmt.Sprintf("post-%s", res.ID)),
+				)
+			} else {
+				sse.PatchElements(
+					gomponents.NodeFunc(PostCard(&res).Render).String(),
+					datastar.WithModeAppend(),
+					datastar.WithSelectorID("posts"),
+				)
+			}
+		}
 	}
 
 	return nil
@@ -76,17 +84,13 @@ func (e *endpoint) AddPost(c echo.Context) error {
 		Author:  c.FormValue("author"),
 	}
 
-	res, err := e.svc.Add(c.Request().Context(), postParams)
+	err := e.svc.Add(c.Request().Context(), postParams)
 	if err != nil {
 		c.Response().WriteHeader(echo.ErrInternalServerError.Code)
 		fmt.Fprintf(c.Response().Writer, "Error adding posts: %v", err)
 	}
 
-	c.Response().Header().Set(echo.HeaderContentType, echo.MIMETextHTML)
-	c.Response().Header().Set(datastarSelector, "#posts")
-	c.Response().Header().Set(datastarMode, string(datastar.ElementPatchModeAppend))
-
-	return PostCard(res).Render(c.Response().Writer)
+	return c.NoContent(http.StatusCreated)
 }
 
 func (e *endpoint) DeletePost(c echo.Context) error {
@@ -98,10 +102,6 @@ func (e *endpoint) DeletePost(c echo.Context) error {
 		c.Response().WriteHeader(echo.ErrInternalServerError.Code)
 		fmt.Fprintf(c.Response(), "Error deleting post: %v", err)
 	}
-
-	c.Response().Header().Set(echo.HeaderContentType, echo.MIMETextHTML)
-	c.Response().Header().Set(datastarSelector, fmt.Sprintf("#post-%s", postParams.ID))
-	c.Response().Header().Set(datastarMode, string(datastar.ElementPatchModeRemove))
 
 	return c.NoContent(http.StatusNoContent)
 }

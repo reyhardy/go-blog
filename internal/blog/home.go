@@ -6,10 +6,10 @@ import (
 	"maragu.dev/gomponents/html"
 )
 
-func Home() gomponents.Node {
+func Home(posts Posts) gomponents.Node {
 	return layout.Layout(
 		header(),
-		main(),
+		main(posts),
 		footer(),
 	)
 }
@@ -40,13 +40,14 @@ func header() gomponents.Node {
 	)
 }
 
-func main() gomponents.Node {
+func main(posts Posts) gomponents.Node {
 	return html.Main(
 		html.Class("container-fluid"),
-		html.Div(
-			html.ID("posts"),
-			html.Data("on-load", `@get('/api/posts')`),
-		),
+		// html.Div(
+		// html.ID("posts"),
+		// html.Data("on-load", `@get('/api/posts')`),
+		PostList(posts),
+		// ),
 	)
 }
 

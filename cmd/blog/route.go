@@ -11,13 +11,10 @@ func routes(dbClient pgsql.Client) {
 
 	e := echo.New()
 
-	// e.Use(middleware.Recover())
-	// e.Use(middleware.Logger())
-
 	e.GET("/", blogEP.GetHome)
 
 	g := e.Group("/api")
-	g.GET("/posts", blogEP.GetPost)
+	g.GET("/posts/sse", blogEP.GetPostSSE)
 	g.POST("/posts", blogEP.AddPost)
 	g.DELETE("/post/:id", blogEP.DeletePost)
 	g.PATCH("/post/:id", blogEP.UpdatePost)

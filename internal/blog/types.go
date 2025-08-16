@@ -11,10 +11,11 @@ const (
 )
 
 type Post struct {
-	ID      string `json:"id" db:"id"`
-	Title   string `json:"title" db:"title"`
-	Content string `json:"content" db:"content"`
-	Author  string `json:"author" db:"author"`
+	ID        string `json:"id" db:"id"`
+	Title     string `json:"title" db:"title"`
+	Content   string `json:"content" db:"content"`
+	Author    string `json:"author" db:"author"`
+	IsDeleted bool   `json:"deleted" db:"deleted"`
 
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
@@ -51,6 +52,10 @@ func NewPost(postParams *PostParams) *Post {
 	postParams.ID = ksuid.String()
 
 	return MapPost(postParams, &createdAt, nil)
+}
+
+type CustomTime struct {
+	time.Time
 }
 
 type PostParams struct {
