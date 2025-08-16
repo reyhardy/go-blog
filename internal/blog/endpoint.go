@@ -10,10 +10,10 @@ import (
 	"maragu.dev/gomponents"
 )
 
-const (
-	datastarSelector string = "datastar-selector"
-	datastarMode     string = "datastar-mode"
-)
+// const (
+// 	datastarSelector string = "datastar-selector"
+// 	datastarMode     string = "datastar-mode"
+// )
 
 type endpoint struct {
 	svc      servicer
@@ -58,17 +58,23 @@ func (e *endpoint) GetPostSSE(c echo.Context) error {
 			c.Response().WriteHeader(echo.ErrInternalServerError.Code)
 			fmt.Fprintf(c.Response().Writer, "Error streaming posts: %v", c.Request().Context().Err())
 		default:
-			if res.IsDeleted {
+			switch true {
+			case res.IsDeleted:
 				sse.PatchElements(
 					"",
 					datastar.WithModeRemove(),
 					datastar.WithSelectorID(fmt.Sprintf("post-%s", res.ID)),
 				)
-			} else {
+			case !res.IsDeleted && res.UpdatedAt.Equal(res.CreatedAt):
 				sse.PatchElements(
 					gomponents.NodeFunc(PostCard(&res).Render).String(),
 					datastar.WithModeAppend(),
 					datastar.WithSelectorID("posts"),
+				)
+			case !res.IsDeleted && !res.UpdatedAt.Equal(res.CreatedAt):
+				sse.PatchElements(
+					gomponents.NodeFunc(PostCard(&res).Render).String(),
+					datastar.WithSelectorID(fmt.Sprintf("post-%s", res.ID)),
 				)
 			}
 		}
@@ -114,14 +120,10 @@ func (e *endpoint) UpdatePost(c echo.Context) error {
 		Author:  c.FormValue("author"),
 	}
 
-	res, err := e.svc.Update(c.Request().Context(), postParams)
+	_, err := e.svc.Update(c.Request().Context(), postParams)
 	if err != nil {
 		c.Response().WriteHeader(echo.ErrInternalServerError.Code)
 		fmt.Fprintf(c.Response(), "Error adding posts: %v", err)
 	}
-
-	c.Response().Header().Set(echo.HeaderContentType, echo.MIMETextHTML)
-	c.Response().Header().Set(datastarSelector, fmt.Sprintf("#post-%s", postParams.ID))
-
-	return PostCard(res).Render(c.Response().Writer)
+	return c.NoContent(http.StatusNoContent)
 }

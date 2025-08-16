@@ -44,8 +44,6 @@ func (s *service) Add(ctx context.Context, postParams *PostParams) error {
 		return err
 	}
 
-	fmt.Printf("new post: %+v\n", post)
-
 	return nil
 }
 

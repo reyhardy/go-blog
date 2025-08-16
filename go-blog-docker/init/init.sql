@@ -16,8 +16,7 @@ RETURNS TRIGGER AS $$
 DECLARE
 	notification json;
 BEGIN
-	IF (TG_OP = 'INSERT') THEN
-		-- notification := row_to_json(NEW);
+	IF (TG_OP = 'INSERT') OR (TG_OP = 'UPDATE') THEN
 		notification := json_build_object(
 			'id', NEW.id,
 			'title', NEW.title,
@@ -27,7 +26,6 @@ BEGIN
 			'created_at', to_char(NEW.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')
 		);
 	ELSIF (TG_OP = 'DELETE') THEN
-		-- notification := row_to_json(OLD);
 		notification := json_build_object(
 			'id', OLD.id,
 			'deleted', true
@@ -39,6 +37,6 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER row_change
-AFTER INSERT OR DELETE ON post
+AFTER INSERT OR UPDATE OR DELETE ON post
 FOR EACH ROW
 EXECUTE FUNCTION notify_trigger();
