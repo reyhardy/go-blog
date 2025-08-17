@@ -16,7 +16,7 @@ type servicer interface {
 	Add(ctx context.Context, postParams *PostParams) error
 	Get(ctx context.Context) (*Post, error)
 	SelectAll(ctx context.Context) (Posts, error)
-	Update(ctx context.Context, postParams *PostParams) (*Post, error)
+	Update(ctx context.Context, postParams *PostParams) error
 	Delete(ctx context.Context, postParams *PostParams) error
 }
 
@@ -63,7 +63,7 @@ func (s *service) SelectAll(ctx context.Context) (Posts, error) {
 	return posts, nil
 }
 
-func (s *service) Update(ctx context.Context, postParams *PostParams) (*Post, error) {
+func (s *service) Update(ctx context.Context, postParams *PostParams) error {
 	q := fmt.Sprintf("UPDATE %s SET title = $1, content = $2, author = $3, updated_at = $4 WHERE id = $5;", TablePost)
 
 	updatedAt := time.Now()
@@ -77,10 +77,10 @@ func (s *service) Update(ctx context.Context, postParams *PostParams) (*Post, er
 		post.UpdatedAt,
 		post.ID,
 	); err != nil {
-		return nil, err
+		return err
 	}
 
-	return post, nil
+	return nil
 }
 
 func (s *service) Delete(ctx context.Context, postParams *PostParams) error {

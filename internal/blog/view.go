@@ -67,14 +67,17 @@ func PostCard(post *Post) gomponents.Node {
 func ModalAddPost() gomponents.Node {
 	return html.Div(
 		html.Dialog(
-			html.Data("ref", "modalAdd"),
+			html.Data("ref", "_modalAdd"),
+			html.Data("on-click", `evt.target === $_modalAdd && $_modalAdd.close(); @setAll("", {include: /^input\./})`),
 			html.Article(
-				html.Data("on-click__outside__capture", "$modalAdd.close()"),
 				html.Header(
 					html.Button(
 						html.Aria("label", "Close"),
 						html.Rel("prev"),
-						html.Data("on-click", "$modalAdd.close()"),
+						html.Data("on-click",
+							`$_modalAdd.close();
+							@setAll("", {include: /^input\./})
+						`),
 					),
 				),
 				html.Form(
@@ -91,7 +94,7 @@ func ModalAddPost() gomponents.Node {
 						html.Button(
 							html.Data("on-click",
 								`@post("/api/posts", {contentType: "form", selector: "#form-add-post"}); 
-								$modalAdd.close();
+								$_modalAdd.close();
 								@setAll("", {include: /^input\./})
 							`),
 							html.Type("button"),
@@ -105,7 +108,7 @@ func ModalAddPost() gomponents.Node {
 		element.ButtonElement(
 			"submit",
 			"Add Post",
-			html.Data("on-click", `$modalAdd.showModal()`),
+			html.Data("on-click", `$_modalAdd.showModal()`),
 		),
 	)
 }
@@ -114,13 +117,13 @@ func ModalEditPost(post *Post) gomponents.Node {
 	return html.Div(
 		html.Dialog(
 			html.Data("ref", fmt.Sprintf("_modalEdit_%s", post.ID)),
+			html.Data("on-click", fmt.Sprintf(`evt.target === $_modalEdit_%s && $_modalEdit_%s.close(); @setAll("", {include: /^input\./})`, post.ID, post.ID)),
 			html.Article(
-				html.Data("on-click__outside__capture", fmt.Sprintf("$_modalEdit_%s.close()", post.ID)),
 				html.Header(
 					html.Button(
 						html.Aria("label", "Close"),
 						html.Rel("prev"),
-						html.Data("on-click", fmt.Sprintf("$_modalEdit_%s.close()", post.ID)),
+						html.Data("on-click", fmt.Sprintf(`$_modalEdit_%s.close(); @setAll("", {include: /^input\./})`, post.ID)),
 					),
 				),
 				html.Form(

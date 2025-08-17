@@ -120,10 +120,9 @@ func (e *endpoint) UpdatePost(c echo.Context) error {
 		Author:  c.FormValue("author"),
 	}
 
-	_, err := e.svc.Update(c.Request().Context(), postParams)
-	if err != nil {
+	if err := e.svc.Update(c.Request().Context(), postParams); err != nil {
 		c.Response().WriteHeader(echo.ErrInternalServerError.Code)
-		fmt.Fprintf(c.Response(), "Error adding posts: %v", err)
+		fmt.Fprintf(c.Response(), "Error updating posts: %v", err)
 	}
 	return c.NoContent(http.StatusNoContent)
 }
