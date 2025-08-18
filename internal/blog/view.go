@@ -139,7 +139,7 @@ func ModalEditPost(post *Post) gomponents.Node {
 					html.Div(
 						html.Button(
 							html.Data("on-click",
-								fmt.Sprintf(`@patch("/api/post/%s", {contentType: "form", selector: "#form-edit-post-%s"}); 
+								fmt.Sprintf(`@put("/api/post/%s", {contentType: "form", selector: "#form-edit-post-%s"}); 
 								$_modalEdit_%s.close();
 								@setAll("", {include: /^input\./})
 							`, post.ID, post.ID, post.ID)),

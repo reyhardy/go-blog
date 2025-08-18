@@ -17,7 +17,7 @@ func routes(dbClient pgsql.Client) {
 	g.GET("/posts/sse", blogEP.GetPostSSE)
 	g.POST("/posts", blogEP.AddPost)
 	g.DELETE("/post/:id", blogEP.DeletePost)
-	g.PATCH("/post/:id", blogEP.UpdatePost)
+	g.PUT("/post/:id", blogEP.UpdatePost)
 
 	e.Static("/static", "public")
 	e.Logger.Fatal(e.Start(":3000"))

@@ -124,5 +124,6 @@ func (e *endpoint) UpdatePost(c echo.Context) error {
 		c.Response().WriteHeader(echo.ErrInternalServerError.Code)
 		fmt.Fprintf(c.Response(), "Error updating posts: %v", err)
 	}
+
 	return c.NoContent(http.StatusNoContent)
 }
