@@ -23,6 +23,7 @@ type endpoint struct {
 type API interface {
 	GetHome(c echo.Context) error
 	GetPostSSE(c echo.Context) error
+	GetPost(c echo.Context) error
 	AddPost(c echo.Context) error
 	DeletePost(c echo.Context) error
 	UpdatePost(c echo.Context) error
@@ -43,6 +44,35 @@ func (e *endpoint) GetHome(c echo.Context) error {
 	}
 
 	return Home(res).Render(c.Response().Writer)
+}
+
+func (e *endpoint) GetPost(c echo.Context) error {
+	notification := make(chan string)
+
+	sse := datastar.NewSSE(c.Response().Writer, c.Request())
+
+	go e.listener.Listen(c.Request().Context(), notification)
+
+	select {
+	case <-c.Request().Context().Done():
+		return c.Request().Context().Err()
+	case payload := <-notification:
+		fmt.Println("payload received: ", payload)
+
+		res, err := e.svc.SelectAll(c.Request().Context())
+		if err != nil {
+			c.Response().WriteHeader(echo.ErrInternalServerError.Code)
+			fmt.Fprintf(c.Response().Writer, "Error fetching posts: %v", err)
+		}
+
+		return sse.PatchElements(
+			gomponents.NodeFunc(PostList(res).Render).String(),
+			datastar.WithModeReplace(),
+			datastar.WithSelectorID("posts"),
+		)
+	}
+
+	// return c.Stream(http.StatusOK, )
 }
 
 func (e *endpoint) GetPostSSE(c echo.Context) error {
@@ -96,7 +126,11 @@ func (e *endpoint) AddPost(c echo.Context) error {
 		fmt.Fprintf(c.Response().Writer, "Error adding posts: %v", err)
 	}
 
-	return c.NoContent(http.StatusCreated)
+	if err := e.listener.Notify(c.Request().Context()); err != nil {
+		fmt.Fprintf(c.Response().Writer, "Error notify posts: %v", err)
+	}
+
+	return c.String(http.StatusCreated, "post created")
 }
 
 func (e *endpoint) DeletePost(c echo.Context) error {
@@ -109,7 +143,11 @@ func (e *endpoint) DeletePost(c echo.Context) error {
 		fmt.Fprintf(c.Response(), "Error deleting post: %v", err)
 	}
 
-	return c.NoContent(http.StatusNoContent)
+	if err := e.listener.Notify(c.Request().Context()); err != nil {
+		fmt.Fprintf(c.Response().Writer, "Error notify posts: %v", err)
+	}
+
+	return c.String(http.StatusNoContent, "post deleted")
 }
 
 func (e *endpoint) UpdatePost(c echo.Context) error {
@@ -125,5 +163,9 @@ func (e *endpoint) UpdatePost(c echo.Context) error {
 		fmt.Fprintf(c.Response(), "Error updating posts: %v", err)
 	}
 
-	return c.NoContent(http.StatusNoContent)
+	if err := e.listener.Notify(c.Request().Context()); err != nil {
+		fmt.Fprintf(c.Response().Writer, "Error notify posts: %v", err)
+	}
+
+	return c.String(http.StatusNoContent, "post updated")
 }

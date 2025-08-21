@@ -14,7 +14,8 @@ func routes(dbClient pgsql.Client) {
 	e.GET("/", blogEP.GetHome)
 
 	g := e.Group("/api")
-	g.GET("/posts/sse", blogEP.GetPostSSE)
+	// g.GET("/posts/sse", blogEP.GetPostSSE)
+	g.GET("/posts/sse", blogEP.GetPost)
 	g.POST("/posts", blogEP.AddPost)
 	g.DELETE("/post/:id", blogEP.DeletePost)
 	g.PUT("/post/:id", blogEP.UpdatePost)

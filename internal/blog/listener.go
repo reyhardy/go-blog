@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/reyhardy/go-blog/pkg/pgsql"
 )
 
@@ -15,8 +14,8 @@ type listen struct {
 
 type listener interface {
 	ListenForNotification(ctx context.Context, channel string, notificationC chan<- Post)
-	Listen(ctx context.Context, channel string) (*pgconn.Notification, error)
-	Notify(ctx context.Context, channel string) error
+	Listen(ctx context.Context, notification chan<- string)
+	Notify(ctx context.Context) error
 }
 
 func NewListener(db pgsql.Client) listener {
@@ -34,11 +33,11 @@ func (l *listen) ListenForNotification(ctx context.Context, channel string, noti
 		fmt.Println("error ping:", err)
 	}
 
-	if _, err := conn.Exec(ctx, fmt.Sprintf("LISTEN %s;", channel)); err != nil {
+	if _, err := conn.Exec(ctx, "LISTEN db_changes;"); err != nil {
 		fmt.Println("error listening:", err)
 	}
 
-	fmt.Printf("listening to %s...\n", channel)
+	fmt.Println("listening to db_change...")
 
 	for {
 		var post Post
@@ -55,7 +54,7 @@ func (l *listen) ListenForNotification(ctx context.Context, channel string, noti
 	}
 }
 
-func (l *listen) Listen(ctx context.Context, channel string) (*pgconn.Notification, error) {
+func (l *listen) Listen(ctx context.Context, notification chan<- string) {
 	conn, err := l.db.Acquire(ctx)
 	if err != nil {
 		fmt.Println("error acquire:", err)
@@ -66,27 +65,24 @@ func (l *listen) Listen(ctx context.Context, channel string) (*pgconn.Notificati
 		fmt.Println("error ping:", err)
 	}
 
-	if _, err := conn.Exec(ctx, fmt.Sprintf("LISTEN %s;", channel)); err != nil {
+	if _, err := conn.Exec(ctx, "LISTEN db_changes;"); err != nil {
 		fmt.Println("error listening:", err)
 	}
 
-	fmt.Printf("listening to %s...\n", channel)
-
-	n := new(pgconn.Notification)
+	fmt.Println("listening to db_changes...")
 
 	for {
-		n, err = conn.Conn().WaitForNotification(ctx)
+		n, err := conn.Conn().WaitForNotification(ctx)
 		if err != nil {
 			fmt.Println("error notification:", err)
 			break
 		}
 
 		fmt.Printf("notification payload: %v\n", n.Payload)
+		notification <- n.Payload
 	}
-
-	return n, nil
 }
 
-func (l *listen) Notify(ctx context.Context, channel string) error {
-	return l.db.Exec(ctx, fmt.Sprintf("SELECT pg_notify(%s, 'notification received');\n", channel))
+func (l *listen) Notify(ctx context.Context) error {
+	return l.db.Exec(ctx, "NOTIFY db_changes, 'this is payload';")
 }
